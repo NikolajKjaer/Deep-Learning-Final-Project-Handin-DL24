@@ -7,6 +7,7 @@ In the folder "code" you will find all the code we have written for this project
 - training.py: This is where you will find our training function, training loop and all the other requirements for training.
 - data_treatment.py: This file was used to generate our noisy images. Different levels of noise is added to each image and then saved in the relevant folder along with the mask we create.
 - interactive.py: This file lets you play around with our model to test the performance and limitations yourself. Choose an image, draw on it and see what the model outputs. An example of how to use the model can be seen here: https://imgur.com/a/m5IPwt7
+- latent_space.py: Contains the code used to explore the structure of the latent space.
 
 In the folder "data" we have 3 subfolders. One contains images used for the unit test (unittest), one contains images used for the interactive.py file (interactive) and the last contains the very small subset of our data as already explained.
 
