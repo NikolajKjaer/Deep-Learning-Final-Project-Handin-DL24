@@ -137,6 +137,8 @@ class VAE(nn.Module):
         # return pixel_loss*0.1 + diff_loss + featureStyle_loss*100 + kldiv*0.01  # Used for the next 600 epochs
         return pixel_loss*0.1 + diff_loss*0.01 + featureStyle_loss*100 + kldiv*0.01  # Used for the last 50 epochs
 
+resnet = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+enc_resnet = enc_ResNet().to(device)  # Used for loss function
 
 if __name__ == "__main__":
     class CustomDataset(torch.utils.data.Dataset):
@@ -161,10 +163,6 @@ if __name__ == "__main__":
     unittest_dataset = CustomDataset(unittest_input, unittest_input)
     unittest_dataloader = torch.utils.data.DataLoader(unittest_dataset, batch_size=1, shuffle=True)
     unittest_iter = iter(unittest_dataloader)
-
-    # Load pretrained ResNet
-    resnet = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
-    enc_resnet = enc_ResNet().to(device)  # Used for loss function
 
     # Load model for unit test
     model = VAE().to(device)

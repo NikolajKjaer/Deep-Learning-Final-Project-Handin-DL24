@@ -2,13 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms, models
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 from torchsummary import summary
-from model import VAE
+from model import VAE, enc_ResNet
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -35,8 +35,6 @@ class CustomDataset(torch.utils.data.Dataset):
 
             return input_img, output_img
 
-# Load VAE
-model = VAE().to(device)
 
 # training function
 def train(epoch, train_loader, valid_loader, folder):
@@ -76,15 +74,21 @@ def train(epoch, train_loader, valid_loader, folder):
     return train_loss, valid_loss  # Purely for plotting purposes
 
 # Prepare for training
+model = VAE().to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-nEpoch = 500  # Was 500, then, 600 then 50 during training
+nEpoch = 10  # Was 500, then, 600 then 50 during training
 all_loss = []
-folders = iter(["5", "10", "15"])
-training_output = datasets.ImageFolder(root='../images/train/gt',
+
+# Load pretrained ResNet
+resnet = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+enc_resnet = enc_ResNet().to(device)  # Used for loss function
+
+training_output = datasets.ImageFolder(root='../data/images/train/gt',
                                        transform=transforms.ToTensor())
-validation_output = datasets.ImageFolder(root='../images/validation/gt',
+validation_output = datasets.ImageFolder(root='../data/images/validation/gt',
                                        transform=transforms.ToTensor())
 
+folders = iter(["5", "10", "15"])
 for epoch in tqdm(range(nEpoch)):
     if epoch % (nEpoch//3) == 0:
         try:
@@ -92,16 +96,16 @@ for epoch in tqdm(range(nEpoch)):
             best_valid_loss = float('inf')
         except StopIteration:
             pass
-    
+
         training_input = datasets.ImageFolder(root=f'../data/images/train/{folder}',
-                                      transform=transforms.ToTensor(), 
-                                      loader=custom_pil_loader)
+                                              transform=transforms.ToTensor(), 
+                                              loader=custom_pil_loader)
         training_data = CustomDataset(training_input, training_output)
         training_loader = torch.utils.data.DataLoader(training_data, batch_size=16, shuffle=True)
                 
         validation_input = datasets.ImageFolder(root=f'../data/images/validation/{folder}',
-                                      transform=transforms.ToTensor(), 
-                                      loader=custom_pil_loader)
+                                                transform=transforms.ToTensor(), 
+                                                loader=custom_pil_loader)
         validation_data = CustomDataset(validation_input, validation_output)
         validation_loader = torch.utils.data.DataLoader(validation_data, batch_size=16, shuffle=True)
             
@@ -115,4 +119,4 @@ for epoch in tqdm(range(nEpoch)):
     plt.plot(np.arange(epoch+1), loss_for_plot[1])
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.savefig("../plots/lossplot.pdf")
+    plt.savefig("../plots/CAN_OVERWRITE.pdf")

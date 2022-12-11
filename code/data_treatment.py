@@ -48,47 +48,24 @@ def circle(image, mask=None):
 
     return reduced_img, mask
 
-# cum_mask = 0
-#num_pictures = 10000
-i = 0
+
 for types in tqdm(['train', 'test', 'validation']):
+    cum_mask = torch.zeros((3,))
     print(f'Currently working on {types} pictures.')
-    images = torchvision.datasets.ImageFolder(root=f'../image_input/{types}/gt', transform=transform) 
+    images = torchvision.datasets.ImageFolder(root=f'../data/images/{types}/gt', transform=transform) 
     #https://github.com/CSAILVision/miniplaces
     for img_name, image in zip(images.imgs, images):
-        img_name = img_name[0].replace(f'../image_input/{types}/gt/all', '')
+        img_name = img_name[0].replace(f'../data/images/{types}/gt\\all\\', '')
         img_name = img_name.replace('/', '')
         img = image[0]
-        mask = None
-        img, mask = square(img, mask)
-        for amount in [5, 10, 15]:
+        for i, amount in enumerate([4,8,12]):
+            mask = None
             for _ in range(amount):
                 img, mask = square(img, mask)
                 img, mask = circle(img, mask)
             final_img = torch.cat((img, mask[0, :, :].reshape(1, OUTPUT_IMAGE_SIZE, OUTPUT_IMAGE_SIZE)), dim=0)
-            torchvision.utils.save_image(final_img, f"../image_input/{types}/{amount}/{img_name[:-4]}.png")
+            torchvision.utils.save_image(final_img, f"../data/images/{types}/{(i+1)*5}/all/{img_name[:-4]}.png")
 
-        # plt.imshow(mask)
-        # plt.show()
-        # cum_mask += torch.sum(mask)
-        #final_img = torch.cat((img, mask.reshape(1, OUTPUT_IMAGE_SIZE, OUTPUT_IMAGE_SIZE)), dim=0)
-        #print(img_name[:-4])
-        #torchvision.utils.save_image(final_img, "../final_input_data/all/"+img_name[:-4]+".png")
+            cum_mask[i] += torch.sum(mask)
 
-# print(cum_mask / (OUTPUT_IMAGE_SIZE * OUTPUT_IMAGE_SIZE * len(images)))
-
-
-# Used for reading images with 4 channels
-def custom_pil_loader(path):  # https://github.com/pytorch/vision/issues/2276
-    with open(path, "rb") as f:
-        img = Image.open(f)
-        return img.convert("RGBA")  # A is for alpha channel, but here it is just a mask
-
-# Example:
-testing_images = torchvision.datasets.ImageFolder(root='../final_input_data',
-                                                  transform=torchvision.transforms.ToTensor(), 
-                                                  loader=custom_pil_loader)
-
-# plot the first 3 channels of the first image
-plt.imshow(testing_images[0][0][0:3].permute(1, 2, 0))
-plt.show()
+    print(cum_mask / (OUTPUT_IMAGE_SIZE * OUTPUT_IMAGE_SIZE * len(images) * 3))  # Used to estimate how much of the image is covered by the mask
